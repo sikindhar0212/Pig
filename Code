@@ -1,0 +1,64 @@
+Products = LOAD '/home/sgfvb/Downloads/data' USING PigStorage(‘\t’) AS (marketplace: chararray,
+customer_id: int,
+review_id: chararray,
+product_id: chararray,
+product_parent: chararray,
+product_title: chararray,
+product_category: chararray,
+star_rating: int,
+helpful_votes: int,
+total_votes: int,
+vine: chararray,
+verified_purchase: chararray,
+review_headline: chararray,
+review_body: chararray,
+review_date: Datetime);
+
+Part_1_group = GROUP Products BY (marketplace, product_category);
+
+Part_1_OP = foreach Part_1_group GENERATE FLATTEN(group),COUNT(Products.review_id),AVG(Products.star_rating);
+
+dump Part_1_OP;
+
+filter_data = FILTER Products BY marketplace != ’US’;
+
+fdg = GROUP filter_data BY (marketplace,product_category);
+
+Part_1_1_OP = foreach fdg GENERATE FLATTEN(group),COUNT(filter_data.review_id),AVG(filter_data.star_rating);
+
+dump Part_1_1_OP;
+
+Part_2_group_1 = GROUP Products BY review_date;
+
+Part_2_OP_1 = foreach Part_2_group_1 GENERATE FLATTEN(group),COUNT(Products.review_id) as total_review_id;
+
+dump Part_2_OP_1;
+
+Part_2_group_2 = GROUP Products BY product_id;
+
+Part_2_OP_2 = foreach Part_2_group_2 GENERATE FLATTEN(group),AVG(Products.helpful_votes) as avg_helpful_votes,AVG(Products.total_votes) as avg_total_votes;
+
+Dump Part_2_OP_2;
+
+Part_2_OP_2_1_temp = ORDER Part_2_OP_2 BY avg_total_votes DESC;
+
+Part_2_OP_2_1 = LIMIT Part_2_OP_2_1_temp 10;
+
+Dump Part_2_OP_2_1;
+
+Part_3_filter = FILTER Products BY verified_purchase == ‘Y’;
+
+Part_3_group_1 = GROUP Part_3_filter BY product_category;
+
+Part_3_OP_1 = foreach Part_3_group_1 GENERATE FLATTEN(group),COUNT(Part_3_filter.product_id) as total_product_id;
+
+dump Part_3_OP_1;
+
+Part_3_group_1_1 = GROUP Part_3_filter BY star_rating;
+
+Part_3_OP_1_1 = foreach Part_3_group_1_1 GENERATE FLATTEN(group),SUM(Part_3_filter.helpful_votes) as sum_of_helpful,SUM(Part_3_filter.total_votes) as sum_of_total_votes,(double)SUM(Part_3_filter.helpful_votes)/SUM(Part_3_filter.total_votes) as avg_votes;
+
+dump Part_3_OP_1_1;
+
+dump Part_3_OP_1_1_2;
+
